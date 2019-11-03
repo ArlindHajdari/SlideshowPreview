@@ -11,20 +11,30 @@ namespace PhotoSlideshow
     {
         static void Main(string[] args)
         {
-            string[] test_files = Directory.GetFiles(@$"{AppContext.BaseDirectory.Substring(0, AppContext.BaseDirectory.IndexOf("bin"))}Samples", "*.txt");
-            List<Instance> test_instances = new List<Instance>();
-            Array.ForEach(test_files, x => { test_instances.Add(Extensions.IO.ReadInput(x)); });
+            int file_to_read = 0;
+            string[] files = Directory.GetFiles($"{Directory.GetCurrentDirectory()}\\Samples", "*.txt");
 
+            List<Slide> slides = new List<Slide>();
+            Instance instance = Extensions.IO.ReadInput(files[file_to_read]);
+            //files.Select(x => { test_instances.Add(Extensions.IO.ReadInput(x)); return x; }).ToList();
 
-            foreach (Instance instance in test_instances.Take(1))
+            Console.WriteLine($"Number of photos: {instance.NumberOfPhotos}\n");
+            foreach (Photo item in instance.Photos)
             {
-                Console.WriteLine($"Number of photos: {instance.NumberOfPhotos}\n");
-
-                foreach (Photo photo in instance.Photos)
+                List<Photo> photos = new List<Photo>
                 {
-                    Console.WriteLine($"Orientation: {photo.Orientation}\tTags: {string.Join(',',photo.Tags.ToArray())}");
-                }
+                    item
+                };
+                slides.Add(new Slide(photos));
+                Console.WriteLine($"Orientation: {item.Orientation}\tTags: {string.Join(", ", item.Tags.ToArray())}");
             }
+
+            Solution solution = new Solution()
+            {
+                Slides = slides
+            };
+
+            Console.WriteLine($"\nInterest Factor: { solution.InterestFactor }");
             Console.ReadKey();
         }
     }

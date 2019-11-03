@@ -14,6 +14,7 @@ namespace PhotoSlideshow.Models
         public List<Photo> Photos { get; set; }
 
         #region [Functions]
+
         /*
          Solve()
          */ 

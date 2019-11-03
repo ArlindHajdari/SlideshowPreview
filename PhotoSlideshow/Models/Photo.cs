@@ -11,6 +11,7 @@ namespace PhotoSlideshow.Models
             Orientation = Orientation;
             Tags = tags;
         }
+
         public Orientation Orientation { get; set; }
         public List<string> Tags { get; set; }
     }

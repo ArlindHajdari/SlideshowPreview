@@ -11,30 +11,23 @@ namespace PhotoSlideshow
     {
         static void Main(string[] args)
         {
-            int file_to_read = 0;
+            int fileToRead = 2;
+            int numberOfFailedAttempts = 100;
             string[] files = Directory.GetFiles($"{Directory.GetCurrentDirectory()}\\Samples", "*.txt");
 
             List<Slide> slides = new List<Slide>();
-            Instance instance = Extensions.IO.ReadInput(files[file_to_read]);
-            //files.Select(x => { test_instances.Add(Extensions.IO.ReadInput(x)); return x; }).ToList();
+            Instance instance = Extensions.IO.ReadInput(files[fileToRead]);
 
             Console.WriteLine($"Number of photos: {instance.NumberOfPhotos}\n");
-            foreach (Photo item in instance.Photos)
-            {
-                List<Photo> photos = new List<Photo>
-                {
-                    item
-                };
-                slides.Add(new Slide(photos));
-                Console.WriteLine($"Orientation: {item.Orientation}\tTags: {string.Join(", ", item.Tags.ToArray())}");
-            }
 
-            Solution solution = new Solution()
-            {
-                Slides = slides
-            };
+            Solution solution = new Solution();
+            solution.GenerateRandomSolution(instance.Photos);
+            solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
 
-            Console.WriteLine($"\nInterest Factor: { solution.InterestFactor }");
+            solution.HillClimbing(numberOfFailedAttempts);
+
+            Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");
+            Console.WriteLine($"Interest Factor: { solution.InterestFactor }");
             Console.ReadKey();
         }
     }

@@ -34,11 +34,5 @@ namespace PhotoSlideshow.Models
                 return true;
             }
         }
-
-        #region [Functions]
-        /*
-         Fitness(Slide)
-         */
-        #endregion
     }
 }

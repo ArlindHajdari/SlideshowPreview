@@ -8,13 +8,7 @@ namespace PhotoSlideshow.Models
     public class Solution
     {
         public List<Slide> Slides { get; set; }
-        public int InterestFactor
-        {
-            get
-            {
-                return CalculateInterestFactor(Slides);
-            }
-        }
+        public int InterestFactor { get; set; }
 
         public Solution()
         {
@@ -27,10 +21,63 @@ namespace PhotoSlideshow.Models
         }
 
         #region [Functions]
-        /*
-        AddSlide(Slide slide)
 
-         */
+        public void HillClimbing(int numberOfFailedAttempts)
+        {
+            Random random = new Random();
+            List<int> randomNumbers = new List<int>();
+            for (int i = 0; i < this.Slides.Count(); i++)
+            {
+                randomNumbers.Add(i);
+            }
+
+            for (int i = 0; i < numberOfFailedAttempts; i++)
+            {
+                List<Slide> tempSolution = this.Slides;
+                List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
+
+                Slide tempSlide = tempSolution[slidesToSwap.FirstOrDefault()];
+                tempSolution[slidesToSwap.FirstOrDefault()] = tempSolution[slidesToSwap.LastOrDefault()];
+                tempSolution[slidesToSwap.LastOrDefault()] = tempSlide;
+
+                int currentInterestFactor = CalculateInterestFactor(tempSolution);
+                if (currentInterestFactor > this.InterestFactor)
+                {
+                    this.Slides = tempSolution;
+                    i = 0;
+                }
+            }
+        }
+
+        public void GenerateRandomSolution(List<Photo> photos)
+        {
+            List<int> photosToSkip = new List<int>();
+            for (int i = 0; i < photos.Count; i++)
+            {
+                if (photosToSkip.Any(x => x == photos[i].Id))
+                {
+                    continue;
+                }
+
+                List<Photo> photosToAdd = new List<Photo>()
+                {
+                    photos[i]
+                };
+
+                if (photos[i].Orientation == Orientation.V)
+                {
+                    Photo photo = photos.Skip(i + 1).Where(x => x.Orientation.Equals(Orientation.V) && !photosToSkip.Contains(x.Id))
+                    .OrderByDescending(x => x.Tags.Where(t => !photos[i].Tags.Contains(t)).Count()).FirstOrDefault();
+
+                    if (photo != null)
+                    {
+                        photosToAdd.Add(photo);
+                        photosToSkip.Add(photo.Id);
+                    }
+                }
+                this.Slides.Add(new Slide(photosToAdd));
+            }
+        }
 
         public int CalculateInterestFactor(List<Slide> slides)
         {

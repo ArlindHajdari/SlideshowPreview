@@ -6,12 +6,14 @@ namespace PhotoSlideshow.Models
 {
     public class Photo
     {
-        public Photo(Orientation orientation, List<string> tags)
+        public Photo(int id, Orientation orientation, List<string> tags)
         {
-            Orientation = Orientation;
+            Id = id;
+            Orientation = orientation;
             Tags = tags;
         }
 
+        public int Id { get; set; }
         public Orientation Orientation { get; set; }
         public List<string> Tags { get; set; }
     }

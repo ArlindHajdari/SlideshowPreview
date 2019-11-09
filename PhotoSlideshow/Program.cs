@@ -24,8 +24,8 @@ namespace PhotoSlideshow
 
             Console.WriteLine($"Number of photos: {instance.NumberOfPhotos}\n");
 
-            solution.GenerateRandomSolution(instance.Photos);
-            solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides.OrderBy(x => random.Next()).ToList());
+            solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
+            solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
             solution.HillClimbing(numberOfFailedAttempts);
 
             Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");

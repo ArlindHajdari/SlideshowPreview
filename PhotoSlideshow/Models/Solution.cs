@@ -41,7 +41,7 @@ namespace PhotoSlideshow.Models
                 tempSolution[slidesToSwap.LastOrDefault()] = tempSlide;
 
                 int currentInterestFactor = CalculateInterestFactor(tempSolution);
-                if (currentInterestFactor >= this.InterestFactor)
+                if (currentInterestFactor > this.InterestFactor)
                 {
                     this.Slides = tempSolution;
                     this.InterestFactor = currentInterestFactor;

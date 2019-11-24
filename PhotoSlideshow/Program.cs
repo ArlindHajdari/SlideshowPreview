@@ -17,7 +17,7 @@ namespace PhotoSlideshow
             Random random = new Random();
             Solution solution = new Solution();
 
-            string[] files = Directory.GetFiles($"{Directory.GetCurrentDirectory()}\\Samples", "*.txt");
+            string[] files = Directory.GetFiles($"Samples", "*.txt");
 
             List<Slide> slides = new List<Slide>();
             Instance instance = Extensions.IO.ReadInput(files[fileToRead]);
@@ -27,6 +27,7 @@ namespace PhotoSlideshow
             solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
             solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
             solution.HillClimbing(numberOfIterations);
+            solution.GenerateOutputFile($"{Path.GetFileNameWithoutExtension(files[fileToRead])}_result_{DateTime.Now.Ticks}.txt");
 
             Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");
             Console.WriteLine($"Interest Factor: { solution.InterestFactor }");

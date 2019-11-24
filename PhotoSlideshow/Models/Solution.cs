@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -100,6 +101,18 @@ namespace PhotoSlideshow.Models
         public int CalculateDifferenteSlideTags(Slide slideA, Slide slideB)
         {
             return slideA.Tags.Where(x => !slideB.Tags.Contains(x)).Count();
+        }
+
+        public void GenerateOutputFile(string filename)
+        {
+            using (StreamWriter file = new StreamWriter(new FileStream(filename, FileMode.CreateNew)))
+            {
+                file.WriteLine(this.Slides.Count);
+                foreach (Slide slide in this.Slides)
+                {
+                    file.WriteLine($"{string.Join(" ", slide.Photos.Select(x => x.Id).ToList())}");
+                }
+            }
         }
 
         #endregion

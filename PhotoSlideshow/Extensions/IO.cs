@@ -23,7 +23,7 @@ namespace PhotoSlideshow.Extensions
                 else
                 {
                     string[] temp_params = lines[i].Split(' ');
-                    Photo temp_photo = new Photo(i, (Orientation)Enum.Parse(typeof(Orientation), temp_params[0])
+                    Photo temp_photo = new Photo(i-1, (Orientation)Enum.Parse(typeof(Orientation), temp_params[0])
                         , new List<string>(temp_params.Skip(2)));
 
                     instance.Photos.Add(temp_photo);

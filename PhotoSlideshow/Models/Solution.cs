@@ -8,7 +8,7 @@ namespace PhotoSlideshow.Models
     public class Solution
     {
         public List<Slide> Slides { get; set; }
-        public int InterestFactor { get; set; }
+        public int InterestFactor { get; set; } = int.MinValue;
 
         public Solution()
         {
@@ -22,7 +22,7 @@ namespace PhotoSlideshow.Models
 
         #region [Functions]
 
-        public void HillClimbing(int numberOfFailedAttempts)
+        public void HillClimbing(int numberOfIterations)
         {
             Random random = new Random();
             List<int> randomNumbers = new List<int>();
@@ -31,7 +31,7 @@ namespace PhotoSlideshow.Models
                 randomNumbers.Add(i);
             }
 
-            for (int i = 0; i < numberOfFailedAttempts; i++)
+            for (int i = 0; i < numberOfIterations; i++)
             {
                 List<Slide> tempSolution = this.Slides;
                 List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
@@ -45,7 +45,6 @@ namespace PhotoSlideshow.Models
                 {
                     this.Slides = tempSolution;
                     this.InterestFactor = currentInterestFactor;
-                    i = 0;
                 }
             }
         }

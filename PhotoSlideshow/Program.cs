@@ -11,8 +11,8 @@ namespace PhotoSlideshow
     {
         static void Main(string[] args)
         {
-            int fileToRead = 2;
-            int numberOfFailedAttempts = 100;
+            int fileToRead = 0;
+            int numberOfIterations = 500;
 
             Random random = new Random();
             Solution solution = new Solution();
@@ -26,7 +26,7 @@ namespace PhotoSlideshow
 
             solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
             solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
-            solution.HillClimbing(numberOfFailedAttempts);
+            solution.HillClimbing(numberOfIterations);
 
             Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");
             Console.WriteLine($"Interest Factor: { solution.InterestFactor }");

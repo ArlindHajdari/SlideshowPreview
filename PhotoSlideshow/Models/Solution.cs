@@ -32,7 +32,7 @@ namespace PhotoSlideshow.Models
                 randomNumbers.Add(i);
             }
 
-            for (int i = 0; i < numberOfIterations; i++)
+            for (int i = 0; i < numberOfIterations; i--)
             {
                 List<Slide> tempSolution = this.Slides;
                 List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
@@ -50,32 +50,89 @@ namespace PhotoSlideshow.Models
             }
         }
 
+        public void SimulatedAnnealing(double temperature = 400.0, double alpha = 0.999, double epsilon = 0.001)
+        {
+            Random random = new Random();
+            double maxTemperature = temperature;
+            int slideNumber = this.Slides.Count();
+            List<int> randomNumbers = new List<int>();
+
+            for (int i = 0; i < slideNumber; i++)
+            {
+                randomNumbers.Add(i);
+            }
+
+            Console.WriteLine($"Initial Values\nalpha: { alpha }, temperature: { temperature }, epsilon: {epsilon}.");
+
+            while (temperature > epsilon)
+            {
+                temperature *= alpha;
+                List<Slide> tempSolution = this.Slides;
+                int normalizedValue = (int)Math.Ceiling((temperature / maxTemperature) * slideNumber);
+
+                Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
+
+                for (int i = 0; i < normalizedValue; i++)
+                {
+                    List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
+                    Slide tempSlide = tempSolution[slidesToSwap.FirstOrDefault()];
+                    tempSolution[slidesToSwap.FirstOrDefault()] = tempSolution[slidesToSwap.LastOrDefault()];
+                    tempSolution[slidesToSwap.LastOrDefault()] = tempSlide;
+                }
+
+                int currentInterestFactor = CalculateInterestFactor(tempSolution);
+                if (currentInterestFactor > this.InterestFactor)
+                {
+                    this.Slides = tempSolution;
+                    this.InterestFactor = currentInterestFactor;
+                }
+            }
+        }
+
         public void GenerateRandomSolution(List<Photo> photos)
         {
+            Random random = new Random();
             List<int> photosToSkip = new List<int>();
-            for (int i = 0; i < photos.Count; i++)
+
+            while (photosToSkip.Count() < photos.Count())
             {
-                if (photosToSkip.Any(x => x == photos[i].Id))
+                Photo photo;
+                if (photosToSkip.Count() == 0)
                 {
-                    continue;
+                    int randomStart = random.Next(0, photos.Count() - 1);
+                    photo = photos.Where(x => randomStart == x.Id).FirstOrDefault();
+                }
+                else
+                {
+                    photo = photos.Where(x => !photosToSkip.Contains(x.Id))
+                       .OrderByDescending(x =>
+                           x.Tags.Where(t => !this.Slides.LastOrDefault().Tags.Contains(t)).Count() +
+                           x.Tags.Where(t => this.Slides.LastOrDefault().Tags.Contains(t)).Count())
+                       .FirstOrDefault();
                 }
 
                 List<Photo> photosToAdd = new List<Photo>()
                 {
-                    photos[i]
+                    photo
                 };
 
-                if (photos[i].Orientation == Orientation.V)
+                if (photo.Orientation == Orientation.V)
                 {
-                    Photo photo = photos.Skip(i + 1).Where(x => x.Orientation.Equals(Orientation.V) && !photosToSkip.Contains(x.Id))
-                    .OrderByDescending(x => x.Tags.Where(t => !photos[i].Tags.Contains(t)).Count()).FirstOrDefault();
+                    Photo secondPhoto = photos
+                        .Where(x => x.Id != photo.Id && x.Orientation.Equals(Orientation.V) && !photosToSkip.Contains(x.Id))
+                        .OrderByDescending(x =>
+                            x.Tags.Where(t => !photo.Tags.Contains(t)).Count() +
+                            x.Tags.Where(t => photo.Tags.Contains(t)).Count())
+                        .FirstOrDefault();
 
-                    if (photo != null)
+                    if (secondPhoto != null)
                     {
-                        photosToAdd.Add(photo);
-                        photosToSkip.Add(photo.Id);
+                        photosToAdd.Add(secondPhoto);
+                        photosToSkip.Add(secondPhoto.Id);
                     }
                 }
+
+                photosToSkip.Add(photo.Id);
                 this.Slides.Add(new Slide(photosToAdd));
             }
         }

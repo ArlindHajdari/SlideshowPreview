@@ -11,7 +11,7 @@ namespace PhotoSlideshow
     {
         static void Main(string[] args)
         {
-            int fileToRead = 0;
+            int fileToRead = 2;
             int numberOfIterations = 500;
 
             Random random = new Random();
@@ -27,6 +27,8 @@ namespace PhotoSlideshow
             solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
             solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
             solution.HillClimbing(numberOfIterations);
+            //solution.SimulatedAnnealing();
+
             solution.GenerateOutputFile($"{Path.GetFileNameWithoutExtension(files[fileToRead])}_result_{DateTime.Now.Ticks}.txt");
 
             Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");

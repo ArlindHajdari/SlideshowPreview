@@ -32,7 +32,7 @@ namespace PhotoSlideshow.Models
                 randomNumbers.Add(i);
             }
 
-            for (int i = 0; i < numberOfIterations; i--)
+            for (int i = 0; i < numberOfIterations; i++)
             {
                 List<Slide> tempSolution = this.Slides;
                 List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();

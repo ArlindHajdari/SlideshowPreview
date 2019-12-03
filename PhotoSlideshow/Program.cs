@@ -26,8 +26,8 @@ namespace PhotoSlideshow
 
             solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
             solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
-            solution.HillClimbing(numberOfIterations);
-            //solution.SimulatedAnnealing();
+            //solution.HillClimbing(numberOfIterations);
+            solution.SimulatedAnnealing(20);
 
             solution.GenerateOutputFile($"{Path.GetFileNameWithoutExtension(files[fileToRead])}_result_{DateTime.Now.Ticks}.txt");
 

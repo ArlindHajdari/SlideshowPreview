@@ -5,6 +5,7 @@ using System.Text;
 
 namespace PhotoSlideshow.Models
 {
+    [Serializable]
     public class Slide
     {
         public Slide(int id, List<Photo> photos)

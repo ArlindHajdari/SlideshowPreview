@@ -4,6 +4,7 @@ using System.Text;
 
 namespace PhotoSlideshow.Models
 {
+    [Serializable]
     public class Photo
     {
         public Photo(int id, Orientation orientation, List<string> tags)

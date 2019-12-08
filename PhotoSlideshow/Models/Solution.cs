@@ -29,10 +29,17 @@ namespace PhotoSlideshow.Models
             return slides;
         }
 
-        public Photo DeepCopyPhoto(Photo photoToCopy)
+        public static T DeepClone<T>(T obj)
         {
-            Photo photo = new Photo(photoToCopy.Id, photoToCopy.Orientation, photoToCopy.Tags);
-            return photo;
+            T objResult;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(ms, obj);
+                ms.Position = 0;
+                objResult = (T)bf.Deserialize(ms);
+            }
+            return objResult;
         }
 
         #region [Functions]
@@ -101,19 +108,7 @@ namespace PhotoSlideshow.Models
                 }
             }
         }
-        public static T DeepClone<T>(T obj)
-        {
-            T objResult;
-            using (MemoryStream ms = new MemoryStream())
-            {
-                BinaryFormatter bf = new BinaryFormatter();
-                bf.Serialize(ms, obj);
-                ms.Position = 0;
-                objResult = (T)bf.Deserialize(ms);
-            }
-            return objResult;
-        }
-
+     
         //metod per ftohje - lundy & mees
         public void SimulatedAnnealingWithAdditionalFeatures(double temperature = 400.0, double alpha = 0.999, double epsilon = 0.001)
         {
@@ -133,9 +128,6 @@ namespace PhotoSlideshow.Models
             {
                 temperature *= alpha;
                 List<Slide> tempSolution = DeepCopySlides();
-
-                int currentInterestFactor1 = CalculateInterestFactor(tempSolution);
-                //Console.WriteLine($"Current Interest Factor one { currentInterestFactor1 }\t\tThis Interest Factor { this.InterestFactor }");
 
                 int normalizedValue = (int)Math.Ceiling((temperature / maxTemperature) * slideNumber);
                 Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");

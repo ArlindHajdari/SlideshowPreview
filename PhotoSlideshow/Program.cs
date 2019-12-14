@@ -11,6 +11,7 @@ namespace PhotoSlideshow
     {
         static void Main(string[] args)
         {
+            #region Initializing
             int fileToRead = 2;
             int numberOfIterations = 500;
 
@@ -23,18 +24,34 @@ namespace PhotoSlideshow
             Instance instance = Extensions.IO.ReadInput(files[fileToRead]);
 
             Console.WriteLine($"Number of photos: {instance.NumberOfPhotos}\n");
+            #endregion
 
-            solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
-            solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
+            #region Algorithms in their pure form
+            //solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
+            //solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
             //solution.HillClimbing(numberOfIterations);
             //solution.SimulatedAnnealing();
-            solution.SimulatedAnnealingWithAdditionalFeatures();
+            #endregion
 
+            #region Algorithms with additional features
+            solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList(), 1);
+            solution.FirstSolutionInterestFactor = solution.CalculateInterestFactor(solution.FirstSolutionSlides);
+
+            solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList(), 2);
+            solution.SecondSolutionInterestFactor = solution.CalculateInterestFactor(solution.SecondSolutionSlides);
+
+            //solution.HillClimbingWithAdditionalFeatures(numberOfIterations);
+            solution.SimulatedAnnealingWithAdditionalFeatures();
+            #endregion
+
+            #region Outputs
             solution.GenerateOutputFile($"{Path.GetFileNameWithoutExtension(files[fileToRead])}_result_{DateTime.Now.Ticks}.txt");
 
             Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");
-            Console.WriteLine($"Interest Factor: { solution.InterestFactor }");
+            Console.WriteLine($"Interest Factor: { solution.InterestFactor }\n");
+
             Console.ReadKey();
+            #endregion
         }
     }
 }

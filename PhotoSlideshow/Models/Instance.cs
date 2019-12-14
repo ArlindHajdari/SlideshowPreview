@@ -12,12 +12,5 @@ namespace PhotoSlideshow.Models
         }
         public int NumberOfPhotos { get; set; } // N
         public List<Photo> Photos { get; set; }
-
-        #region [Functions]
-
-        /*
-         Solve()
-         */ 
-        #endregion
     }
 }

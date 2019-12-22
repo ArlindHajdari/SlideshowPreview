@@ -301,7 +301,7 @@ namespace PhotoSlideshow.Models
             SetBestSolution();
         }
 
-        public void SimulatedAnnealing(double temperature = 400.0, double alpha = 0.999, double epsilon = 0.001)
+        public void SimulatedAnnealing(double temperature = 100, double alpha = 0.99, double epsilon = 0.00001)
         {
             Random random = new Random();
             double maxTemperature = temperature;
@@ -319,7 +319,7 @@ namespace PhotoSlideshow.Models
             {
                 temperature *= alpha;
                 List<Slide> tempSolution = DeepCopySlides();
-                int normalizedValue = (int)Math.Ceiling(((temperature / 2) / maxTemperature) * slideNumber);
+                int normalizedValue = (int)Math.Ceiling(((temperature / 4) / maxTemperature) * slideNumber);
                 //Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
 
                 for (int i = 0; i < normalizedValue; i++)
@@ -337,7 +337,7 @@ namespace PhotoSlideshow.Models
             }
         }
 
-        public void SimulatedAnnealingWithAdditionalFeatures(double temperature = 400.0, double alpha = 0.999, double epsilon = 0.00001)
+        public void SimulatedAnnealingWithAdditionalFeatures(double temperature = 100, double alpha = 0.99, double epsilon = 0.00001)
         {
             double maxTemperature = temperature;
             int slideNumber = this.FirstSolutionSlides.Count();
@@ -356,8 +356,8 @@ namespace PhotoSlideshow.Models
                 List<Slide> firstTempSolution = DeepCopyFirstSlides();
                 List<Slide> secondTempSolution = DeepCopySecondSlides();
 
-                int normalizedValue = (int)Math.Ceiling((temperature / maxTemperature) * slideNumber);
-                //Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
+                int normalizedValue = (int)Math.Ceiling(((temperature / 4) / maxTemperature) * slideNumber);
+                Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
 
                 for (int i = 0; i < normalizedValue; i++)
                 {

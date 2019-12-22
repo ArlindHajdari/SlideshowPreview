@@ -12,8 +12,8 @@ namespace PhotoSlideshow
         static void Main(string[] args)
         {
             #region Initializing
-            int fileToRead = 3;
-            int numberOfIterations = 150000;
+            int fileToRead = 2;
+            int numberOfIterations = 50000;
 
             Random random = new Random();
             Solution solution = new Solution();
@@ -40,8 +40,8 @@ namespace PhotoSlideshow
             solution.SecondSolutionSlides = new List<Slide>(solution.FirstSolutionSlides.OrderBy(x => random.Next()));
             solution.SecondSolutionInterestFactor = solution.CalculateInterestFactor(solution.SecondSolutionSlides);
 
-            solution.HillClimbingWithAdditionalFeatures(numberOfIterations);
-            //solution.SimulatedAnnealingWithAdditionalFeatures();
+            //solution.HillClimbingWithAdditionalFeatures(numberOfIterations);
+            solution.SimulatedAnnealingWithAdditionalFeatures();
             #endregion
 
             #region Outputs

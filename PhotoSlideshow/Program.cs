@@ -34,7 +34,7 @@ namespace PhotoSlideshow
             #endregion
 
             #region Algorithms with additional features
-            solution.GenerateSolutionWithHeuristic(instance.Photos.OrderBy(x => x.Orientation).ThenBy(x => random.Next()).ToList(), 1);
+            solution.GenerateSolutionWithHeuristic(instance.Photos.OrderBy(x => x.Orientation).ThenBy(x => random.Next()).ToList(), 3000, 1);
             solution.FirstSolutionInterestFactor = solution.CalculateInterestFactor(solution.FirstSolutionSlides);
 
             solution.SecondSolutionSlides = new List<Slide>(solution.FirstSolutionSlides.OrderBy(x => random.Next()));

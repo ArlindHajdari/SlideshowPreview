@@ -64,7 +64,7 @@ namespace PhotoSlideshow.Models
 
         #region [Functions]
 
-        public void GenerateRandomSolution(List<Photo> photos, int? firstOrSecond = null)
+        public void GenerateRandomSolution(List<Photo> photos)
         {
             int slideId = 0;
             Random random = new Random();
@@ -72,21 +72,8 @@ namespace PhotoSlideshow.Models
 
             while (photosToSkip.Count() < photos.Count())
             {
-                Photo photo;
-                if (photosToSkip.Count() == 0)
-                {
-                    int randomStart = random.Next(0, photos.Count() - 1);
-                    photo = photos.Where(x => randomStart == x.Id).FirstOrDefault();
-                }
-                else
-                {
-                    photo = photos.Where(x => !photosToSkip.Contains(x.Id))
-                       .OrderByDescending(x =>
-                           x.Tags.Where(t => !this.Slides.LastOrDefault().Tags.Contains(t)).Count() +
-                           x.Tags.Where(t => this.Slides.LastOrDefault().Tags.Contains(t)).Count() +
-                           this.Slides.LastOrDefault().Tags.Where(t => x.Tags.Contains(t)).Count())
-                       .FirstOrDefault();
-                }
+                int randomStart = random.Next(0, photos.Count() - 1);
+                Photo photo = photos.Where(x => randomStart == x.Id).FirstOrDefault();
 
                 List<Photo> photosToAdd = new List<Photo>()
                 {
@@ -95,14 +82,7 @@ namespace PhotoSlideshow.Models
 
                 if (photo.Orientation == Orientation.V)
                 {
-                    Photo secondPhoto = photos
-                        .Where(x => x.Id != photo.Id && x.Orientation.Equals(Orientation.V) && !photosToSkip.Contains(x.Id))
-                        .OrderByDescending(x =>
-                            x.Tags.Where(t => !photo.Tags.Contains(t)).Count() +
-                            x.Tags.Where(t => photo.Tags.Contains(t)).Count() +
-                            photo.Tags.Where(t => x.Tags.Contains(t)).Count())
-                        .FirstOrDefault();
-
+                    Photo secondPhoto = photos.FirstOrDefault(x => x.Id != photo.Id && x.Orientation.Equals(Orientation.V) && !photosToSkip.Contains(x.Id));
                     if (secondPhoto != null)
                     {
                         photosToAdd.Add(secondPhoto);
@@ -114,6 +94,72 @@ namespace PhotoSlideshow.Models
                 this.Slides.Add(new Slide(slideId, photosToAdd));
                 slideId++;
             }
+        }
+
+        public void GenerateSolutionWithHeuristic(List<Photo> photos, int divideNumber = 200, int? firstOrSecond = null)
+        {
+            Random random = new Random();
+
+            int slideId = 0;
+            int photosCount = photos.Count();
+
+            int normalizedValue = (int)Math.Ceiling((decimal)photosCount / divideNumber);
+
+            for (int i = 0; i < normalizedValue; i++)
+            {
+                List<Photo> tempPhotos = new List<Photo>(photos.Skip(i * divideNumber).Take(divideNumber));
+                int tempPhotosCount = tempPhotos.Count();
+                int iterationCount = 0;
+
+                while (iterationCount < tempPhotosCount)
+                {
+                    Photo photo;
+                    if (iterationCount != 0 && i != 0)
+                    {
+                        photo = tempPhotos.OrderByDescending(x =>
+                                            x.Tags.Where(t => !this.Slides.LastOrDefault().Tags.Contains(t)).Count() +
+                                            x.Tags.Where(t => this.Slides.LastOrDefault().Tags.Contains(t)).Count() +
+                                            this.Slides.LastOrDefault().Tags.Where(t => x.Tags.Contains(t)).Count())
+                                       .FirstOrDefault();
+                    }
+                    else
+                    {
+                        photo = tempPhotos.FirstOrDefault();
+                    }
+
+
+                    List<Photo> photosToAdd = new List<Photo>()
+                    {
+                        photo
+                    };
+
+                    if (photo.Orientation == Orientation.V)
+                    {
+                        Photo secondPhoto = tempPhotos
+                            .Where(x => x.Id != photo.Id && x.Orientation.Equals(Orientation.V))
+                            .OrderByDescending(x =>
+                                x.Tags.Where(t => !photo.Tags.Contains(t)).Count() +
+                                x.Tags.Where(t => photo.Tags.Contains(t)).Count() +
+                                photo.Tags.Where(t => x.Tags.Contains(t)).Count())
+                            .FirstOrDefault();
+
+                        if (secondPhoto != null)
+                        {
+                            photosToAdd.Add(secondPhoto);
+                            tempPhotos.Remove(secondPhoto);
+
+                            iterationCount++;
+                        }
+                    }
+
+                    this.Slides.Add(new Slide(slideId, photosToAdd));
+                    tempPhotos.Remove(photo);
+
+                    iterationCount++;
+                    slideId++;
+                }
+            }
+
             if (firstOrSecond.HasValue)
             {
                 if (firstOrSecond == 1)
@@ -143,8 +189,23 @@ namespace PhotoSlideshow.Models
                 int firstSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.FirstOrDefault()));
                 int secondSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.LastOrDefault()));
 
-                Slide slideA = DeepClone(slides[firstSlideIndex]);
-                Slide slideB = DeepClone(slides[firstSlideIndex]);
+                //Slide slideA = DeepClone(slides[firstSlideIndex]);
+                //Slide slideB = DeepClone(slides[secondSlideIndex]);
+
+                List<Photo> firstSlidePhotos = new List<Photo>
+                {
+                    new Photo(slides[firstSlideIndex].Photos.FirstOrDefault().Id, Orientation.V, new List<string>(slides[firstSlideIndex].Photos.FirstOrDefault().Tags)),
+                    new Photo(slides[firstSlideIndex].Photos.LastOrDefault().Id, Orientation.V, new List<string>(slides[firstSlideIndex].Photos.LastOrDefault().Tags))
+                };
+
+                List<Photo> secondSlidePhotos = new List<Photo>
+                {
+                    new Photo(slides[secondSlideIndex].Photos.FirstOrDefault().Id, Orientation.V, new List<string>(slides[secondSlideIndex].Photos.FirstOrDefault().Tags)),
+                    new Photo(slides[secondSlideIndex].Photos.LastOrDefault().Id, Orientation.V, new List<string>(slides[secondSlideIndex].Photos.LastOrDefault().Tags))
+                };
+
+                Slide slideA = new Slide(slides[firstSlideIndex].Id, firstSlidePhotos);
+                Slide slideB = new Slide(slides[secondSlideIndex].Id, secondSlidePhotos);
 
                 slideA.Photos[firstSlidePhotoIndex] = slides[secondSlideIndex].Photos[secondSlidePhotoIndex];
                 slideB.Photos[secondSlidePhotoIndex] = slides[firstSlideIndex].Photos[firstSlidePhotoIndex];
@@ -207,9 +268,7 @@ namespace PhotoSlideshow.Models
                 List<Slide> tempSolution = DeepCopySlides();
                 List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
 
-                Slide tempSlide = tempSolution[slidesToSwap.FirstOrDefault()];
-                tempSolution[slidesToSwap.FirstOrDefault()] = tempSolution[slidesToSwap.LastOrDefault()];
-                tempSolution[slidesToSwap.LastOrDefault()] = tempSlide;
+                SwapSlidesOrPhotos(tempSolution, randomNumbers);
 
                 int currentInterestFactor = CalculateInterestFactor(tempSolution);
                 if (currentInterestFactor >= this.InterestFactor)
@@ -260,15 +319,13 @@ namespace PhotoSlideshow.Models
             {
                 temperature *= alpha;
                 List<Slide> tempSolution = DeepCopySlides();
-                int normalizedValue = (int)Math.Ceiling((temperature / maxTemperature) * slideNumber);
+                int normalizedValue = (int)Math.Ceiling(((temperature / 2) / maxTemperature) * slideNumber);
+                //Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
 
                 for (int i = 0; i < normalizedValue; i++)
                 {
                     List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
-
-                    Slide tempSlide = tempSolution[slidesToSwap.FirstOrDefault()];
-                    tempSolution[slidesToSwap.FirstOrDefault()] = tempSolution[slidesToSwap.LastOrDefault()];
-                    tempSolution[slidesToSwap.LastOrDefault()] = tempSlide;
+                    SwapSlidesOrPhotos(tempSolution, slidesToSwap);
                 }
 
                 int currentInterestFactor = CalculateInterestFactor(tempSolution);
@@ -280,7 +337,7 @@ namespace PhotoSlideshow.Models
             }
         }
 
-        public void SimulatedAnnealingWithAdditionalFeatures(double temperature = 400.0, double alpha = 0.999, double epsilon = 0.001)
+        public void SimulatedAnnealingWithAdditionalFeatures(double temperature = 400.0, double alpha = 0.999, double epsilon = 0.00001)
         {
             double maxTemperature = temperature;
             int slideNumber = this.FirstSolutionSlides.Count();
@@ -300,7 +357,7 @@ namespace PhotoSlideshow.Models
                 List<Slide> secondTempSolution = DeepCopySecondSlides();
 
                 int normalizedValue = (int)Math.Ceiling((temperature / maxTemperature) * slideNumber);
-                Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
+                //Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
 
                 for (int i = 0; i < normalizedValue; i++)
                 {

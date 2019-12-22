@@ -12,8 +12,8 @@ namespace PhotoSlideshow
         static void Main(string[] args)
         {
             #region Initializing
-            int fileToRead = 2;
-            int numberOfIterations = 500;
+            int fileToRead = 3;
+            int numberOfIterations = 150000;
 
             Random random = new Random();
             Solution solution = new Solution();
@@ -27,21 +27,21 @@ namespace PhotoSlideshow
             #endregion
 
             #region Algorithms in their pure form
-            //solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList());
+            //solution.GenerateSolutionWithHeuristic(instance.Photos.OrderBy(x => x.Orientation).ThenBy(x => random.Next()).ToList(), 3000);
             //solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
             //solution.HillClimbing(numberOfIterations);
-            //solution.SimulatedAnnealing();
+            //solution.SimulatedAnnealing(400, 0.99, 0.00001);
             #endregion
 
             #region Algorithms with additional features
-            solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList(), 1);
+            solution.GenerateSolutionWithHeuristic(instance.Photos.OrderBy(x => x.Orientation).ThenBy(x => random.Next()).ToList(), 1);
             solution.FirstSolutionInterestFactor = solution.CalculateInterestFactor(solution.FirstSolutionSlides);
 
-            solution.GenerateRandomSolution(instance.Photos.OrderBy(x => random.Next()).ToList(), 2);
+            solution.SecondSolutionSlides = new List<Slide>(solution.FirstSolutionSlides.OrderBy(x => random.Next()));
             solution.SecondSolutionInterestFactor = solution.CalculateInterestFactor(solution.SecondSolutionSlides);
 
-            //solution.HillClimbingWithAdditionalFeatures(numberOfIterations);
-            solution.SimulatedAnnealingWithAdditionalFeatures();
+            solution.HillClimbingWithAdditionalFeatures(numberOfIterations);
+            //solution.SimulatedAnnealingWithAdditionalFeatures();
             #endregion
 
             #region Outputs

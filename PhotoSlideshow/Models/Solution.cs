@@ -10,6 +10,7 @@ namespace PhotoSlideshow.Models
 {
     public class Solution
     {
+        #region Variables
         public List<Slide> Slides { get; set; }
         public int InterestFactor { get; set; } = int.MinValue;
 
@@ -18,7 +19,9 @@ namespace PhotoSlideshow.Models
 
         public List<Slide> SecondSolutionSlides { get; set; }
         public int SecondSolutionInterestFactor { get; set; } = int.MinValue;
+        #endregion
 
+        #region Contructors
         public Solution()
         {
             this.Slides = new List<Slide>();
@@ -30,7 +33,9 @@ namespace PhotoSlideshow.Models
         {
             this.Slides = Slides;
         }
+        #endregion
 
+        #region Copy/Clone objects
         public List<Slide> DeepCopySlides()
         {
             List<Slide> slides = this.Slides.ConvertAll(x => new Slide(x.Id, x.Photos));
@@ -61,8 +66,7 @@ namespace PhotoSlideshow.Models
             }
             return objResult;
         }
-
-        #region [Functions]
+        #endregion
 
         #region Generate Solution
         public void GenerateRandomSolution(List<Photo> photos)
@@ -97,18 +101,18 @@ namespace PhotoSlideshow.Models
             }
         }
 
-        public void GenerateSolutionWithHeuristic(List<Photo> photos, int divideNumber = 200, int? firstOrSecond = null)
+        public void GenerateSolutionWithHeuristic(List<Photo> photos, int takePhotosNumber = 1000, int? firstOrSecond = null)
         {
             Random random = new Random();
 
             int slideId = 0;
             int photosCount = photos.Count();
 
-            int normalizedValue = (int)Math.Ceiling((decimal)photosCount / divideNumber);
+            int normalizedValue = (int)Math.Ceiling((decimal)photosCount / takePhotosNumber);
 
             for (int i = 0; i < normalizedValue; i++)
             {
-                List<Photo> tempPhotos = new List<Photo>(photos.Skip(i * divideNumber).Take(divideNumber));
+                List<Photo> tempPhotos = new List<Photo>(photos.Skip(i * takePhotosNumber).Take(takePhotosNumber));
                 int tempPhotosCount = tempPhotos.Count();
                 int iterationCount = 0;
 
@@ -177,13 +181,14 @@ namespace PhotoSlideshow.Models
         }
         #endregion
 
+        #region Functions
         public void Mutate(List<Slide> slides, List<int> randomNumbers)
         {
             Random random = new Random();
-            int swapOrChange = random.Next(0, 9);
+            int mutationSelector = random.Next(0, 10);
             List<int> slidesToSwap = slides.Where(x => x.Photos.Count == 2).OrderBy(x => random.Next()).Select(x => x.Id).Take(2).ToList();
 
-            if (swapOrChange < 3 && slidesToSwap.Count == 2)
+            if (mutationSelector < 3 && slidesToSwap.Count == 2)
             {
                 int firstSlidePhotoIndex = random.Next(0, 2);
                 int secondSlidePhotoIndex = random.Next(0, 2);
@@ -212,7 +217,7 @@ namespace PhotoSlideshow.Models
                 slides[firstSlideIndex] = slideA;
                 slides[secondSlideIndex] = slideB;
             }
-            else if (swapOrChange < 7)
+            else if (mutationSelector < 7)
             {
                 slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
 
@@ -220,12 +225,19 @@ namespace PhotoSlideshow.Models
                 slides[slidesToSwap.FirstOrDefault()] = slides[slidesToSwap.LastOrDefault()];
                 slides[slidesToSwap.LastOrDefault()] = tempSlide;
             }
-            else
+            else if (mutationSelector < 9)
             {
                 slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
                 Slide slide = slides[slidesToSwap.FirstOrDefault()];
                 slides.RemoveAt(slidesToSwap.FirstOrDefault());
                 slides.Insert(slidesToSwap.LastOrDefault(), slide);
+            }
+            else
+            {
+                int slidesCount = slides.Count();
+                int skip = random.Next(0, slidesCount);
+                int take = random.Next(0, slidesCount - skip);
+                slides.Skip(skip).Take(take).OrderBy(x => random.Next()).ToList();
             }
         }
 
@@ -260,33 +272,10 @@ namespace PhotoSlideshow.Models
             }
         }
 
+        #endregion
+
         #region Algorithms
         public void HillClimbing(int numberOfIterations)
-        {
-            Random random = new Random();
-            List<int> randomNumbers = new List<int>();
-            for (int i = 0; i < this.Slides.Count(); i++)
-            {
-                randomNumbers.Add(i);
-            }
-
-            for (int i = 0; i < numberOfIterations; i++)
-            {
-                List<Slide> tempSolution = DeepCopySlides();
-                List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
-
-                Mutate(tempSolution, randomNumbers);
-
-                int currentInterestFactor = CalculateInterestFactor(tempSolution);
-                if (currentInterestFactor >= this.InterestFactor)
-                {
-                    this.Slides = new List<Slide>(tempSolution);
-                    this.InterestFactor = currentInterestFactor;
-                }
-            }
-        }
-
-        public void HillClimbingWithAdditionalFeatures(int numberOfIterations)
         {
             List<int> randomNumbers = new List<int>();
             for (int i = 0; i < this.Slides.Count(); i++)
@@ -308,43 +297,7 @@ namespace PhotoSlideshow.Models
             SetBestSolution();
         }
 
-        public void SimulatedAnnealing(double temperature = 100, double alpha = 0.99, double epsilon = 0.00001)
-        {
-            Random random = new Random();
-            double maxTemperature = temperature;
-            int slideNumber = this.Slides.Count();
-            List<int> randomNumbers = new List<int>();
-
-            for (int i = 0; i < slideNumber; i++)
-            {
-                randomNumbers.Add(i);
-            }
-
-            Console.WriteLine($"Initial Values\ntemperature: { temperature }, alpha: { alpha }, epsilon: {epsilon}.");
-
-            while (temperature > epsilon)
-            {
-                temperature *= alpha;
-                List<Slide> tempSolution = DeepCopySlides();
-                int normalizedValue = (int)Math.Ceiling(((temperature / 4) / maxTemperature) * slideNumber);
-                //Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
-
-                for (int i = 0; i < normalizedValue; i++)
-                {
-                    List<int> slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
-                    Mutate(tempSolution, slidesToSwap);
-                }
-
-                int currentInterestFactor = CalculateInterestFactor(tempSolution);
-                if (currentInterestFactor >= this.InterestFactor)
-                {
-                    this.Slides = new List<Slide>(tempSolution);
-                    this.InterestFactor = currentInterestFactor;
-                }
-            }
-        }
-
-        public void SimulatedAnnealingWithAdditionalFeatures(double temperature = 100, double alpha = 0.99, double epsilon = 0.001)
+        public void SimulatedAnnealing(double temperature, double alpha, double epsilon)
         {
             double maxTemperature = temperature;
             int slideNumber = this.FirstSolutionSlides.Count();
@@ -377,6 +330,7 @@ namespace PhotoSlideshow.Models
         }
         #endregion
 
+        #region Interest Factor
         public int CalculateInterestFactor(List<Slide> slides)
         {
             int interestFactor = 0;
@@ -399,7 +353,9 @@ namespace PhotoSlideshow.Models
         {
             return slideA.Tags.Where(x => !slideB.Tags.Contains(x)).Count();
         }
+        #endregion
 
+        #region Output file
         public void GenerateOutputFile(string filename)
         {
             using (StreamWriter file = new StreamWriter(new FileStream(filename, FileMode.CreateNew)))
@@ -411,7 +367,6 @@ namespace PhotoSlideshow.Models
                 }
             }
         }
-
         #endregion
     }
 }

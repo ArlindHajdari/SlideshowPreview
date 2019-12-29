@@ -11,9 +11,13 @@ namespace PhotoSlideshow
     {
         static void Main(string[] args)
         {
-            #region Initializing
+            #region Initializing values
             int fileToRead = 2;
-            int numberOfIterations = 50000;
+            int numberOfIterations = 500;
+
+            double temperature = 200;
+            double alpha = 0.996;
+            double epsilon = 0.00001;
 
             Random random = new Random();
             Solution solution = new Solution();
@@ -26,22 +30,15 @@ namespace PhotoSlideshow
             Console.WriteLine($"Number of photos: {instance.NumberOfPhotos}\n");
             #endregion
 
-            #region Algorithms in their pure form
-            //solution.GenerateSolutionWithHeuristic(instance.Photos.OrderBy(x => x.Orientation).ThenBy(x => random.Next()).ToList(), 3000);
-            //solution.InterestFactor = solution.CalculateInterestFactor(solution.Slides);
-            //solution.HillClimbing(numberOfIterations);
-            //solution.SimulatedAnnealing(400, 0.99, 0.00001);
-            #endregion
-
-            #region Algorithms with additional features
-            solution.GenerateSolutionWithHeuristic(instance.Photos.OrderBy(x => x.Orientation).ThenBy(x => random.Next()).ToList(), 3000, 1);
+            #region Algorithm
+            solution.GenerateSolutionWithHeuristic(instance.Photos.OrderBy(x => x.Orientation).ThenBy(x => random.Next()).ToList(), 1000, 1);
             solution.FirstSolutionInterestFactor = solution.CalculateInterestFactor(solution.FirstSolutionSlides);
 
             solution.SecondSolutionSlides = new List<Slide>(solution.FirstSolutionSlides.OrderBy(x => random.Next()));
             solution.SecondSolutionInterestFactor = solution.CalculateInterestFactor(solution.SecondSolutionSlides);
 
-            //solution.HillClimbingWithAdditionalFeatures(numberOfIterations);
-            solution.SimulatedAnnealingWithAdditionalFeatures();
+            //solution.HillClimbing(numberOfIterations);
+            solution.SimulatedAnnealing(temperature, alpha, epsilon);
             #endregion
 
             #region Outputs

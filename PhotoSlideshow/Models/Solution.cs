@@ -74,10 +74,11 @@ namespace PhotoSlideshow.Models
             int slideId = 0;
             Random random = new Random();
             List<int> photosToSkip = new List<int>();
+            int photosCount = photos.Count();
 
-            while (photosToSkip.Count() < photos.Count())
+            while (photosToSkip.Count() < photosCount)
             {
-                int randomStart = random.Next(0, photos.Count() - 1);
+                int randomStart = random.Next(0, photosCount - 1);
                 Photo photo = photos.Where(x => randomStart == x.Id).FirstOrDefault();
 
                 List<Photo> photosToAdd = new List<Photo>()
@@ -144,8 +145,7 @@ namespace PhotoSlideshow.Models
                             .Where(x => x.Id != photo.Id && x.Orientation.Equals(Orientation.V))
                             .OrderByDescending(x =>
                                 x.Tags.Where(t => !photo.Tags.Contains(t)).Count() +
-                                x.Tags.Where(t => photo.Tags.Contains(t)).Count() +
-                                photo.Tags.Where(t => x.Tags.Contains(t)).Count())
+                                x.Tags.Where(t => photo.Tags.Contains(t)).Count())
                             .FirstOrDefault();
 
                         if (secondPhoto != null)
@@ -182,8 +182,9 @@ namespace PhotoSlideshow.Models
         #endregion
 
         #region Functions
-        public void Mutate(List<Slide> slides, List<int> randomNumbers)
+        public (int, int) Mutate(List<Slide> slides, List<int> randomNumbers)
         {
+            (int, int) response = (0, 0);
             Random random = new Random();
             int mutationSelector = random.Next(0, 10);
             List<int> slidesToSwap = slides.Where(x => x.Photos.Count == 2).OrderBy(x => random.Next()).Select(x => x.Id).Take(2).ToList();
@@ -195,6 +196,8 @@ namespace PhotoSlideshow.Models
 
                 int firstSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.FirstOrDefault()));
                 int secondSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.LastOrDefault()));
+
+                response.Item1 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, false);
 
                 List<Photo> firstSlidePhotos = new List<Photo>
                 {
@@ -216,32 +219,49 @@ namespace PhotoSlideshow.Models
 
                 slides[firstSlideIndex] = slideA;
                 slides[secondSlideIndex] = slideB;
+
+                response.Item2 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, false);
             }
             else if (mutationSelector < 7)
             {
                 slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
 
+                response.Item1 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
+
                 Slide tempSlide = slides[slidesToSwap.FirstOrDefault()];
                 slides[slidesToSwap.FirstOrDefault()] = slides[slidesToSwap.LastOrDefault()];
                 slides[slidesToSwap.LastOrDefault()] = tempSlide;
+
+                response.Item2 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
             }
-            else if (mutationSelector < 9)
-            {
-                slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
-                Slide slide = slides[slidesToSwap.FirstOrDefault()];
-                slides.RemoveAt(slidesToSwap.FirstOrDefault());
-                slides.Insert(slidesToSwap.LastOrDefault(), slide);
-            }
+            //else if (mutationSelector < 9)
+            //{
+            //    slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
+
+            //    response.Item1 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
+
+            //    Slide slide = slides[slidesToSwap.FirstOrDefault()];
+            //    slides.RemoveAt(slidesToSwap.FirstOrDefault());
+            //    slides.Insert(slidesToSwap.LastOrDefault(), slide);
+
+            //    response.Item2 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
+            //}
             else
             {
                 int slidesCount = slides.Count();
                 int skip = random.Next(0, slidesCount);
                 int take = random.Next(0, slidesCount - skip);
+
+                response.Item1 = MutationInterestFactor(slides, skip, skip + take, true);
+
                 slides.Skip(skip).Take(take).OrderBy(x => random.Next()).ToList();
+
+                response.Item2 = MutationInterestFactor(slides, skip, skip + take, true);
             }
+            return response;
         }
 
-        public void CheckSolutionsForImprovements(List<Slide> firstSolution, List<Slide> secondSolution)
+        public void CheckHCForImprovements(List<Slide> firstSolution, List<Slide> secondSolution)
         {
             int firstSolutionInterestFactor = CalculateInterestFactor(firstSolution);
             if (firstSolutionInterestFactor >= this.FirstSolutionInterestFactor)
@@ -258,17 +278,46 @@ namespace PhotoSlideshow.Models
             }
         }
 
+        public void CheckSAForImprovements(List<Slide> firstSolution, List<Slide> secondSolution, int firstInterestFactor, int secondInterestFactor, double temperature)
+        {
+            if (TakeSolution(this.FirstSolutionInterestFactor, firstInterestFactor, temperature))
+            {
+                this.FirstSolutionSlides = firstSolution;
+                this.FirstSolutionInterestFactor = firstInterestFactor;
+            }
+
+            if (TakeSolution(this.SecondSolutionInterestFactor, secondInterestFactor, temperature))
+            {
+                this.SecondSolutionSlides = secondSolution;
+                this.SecondSolutionInterestFactor = secondInterestFactor;
+            }
+        }
+
+        public bool TakeSolution(int qualityOfS, int qualityOfR, double temperature)
+        {
+            Random random = new Random();
+            double quality = qualityOfR - qualityOfS;
+
+            double e = Math.Pow(Math.E, quality / temperature);
+            double nextDouble = random.NextDouble();
+
+            return qualityOfR > qualityOfS || nextDouble < e / 2;
+        }
+
         public void SetBestSolution()
         {
-            if (this.FirstSolutionInterestFactor > this.SecondSolutionInterestFactor)
+            if (this.FirstSolutionInterestFactor > this.InterestFactor || this.SecondSolutionInterestFactor > this.InterestFactor)
             {
-                this.Slides = this.FirstSolutionSlides;
-                this.InterestFactor = this.FirstSolutionInterestFactor;
-            }
-            else
-            {
-                this.Slides = this.SecondSolutionSlides;
-                this.InterestFactor = this.SecondSolutionInterestFactor;
+                if (this.FirstSolutionInterestFactor > this.SecondSolutionInterestFactor)
+                {
+                    this.Slides = this.FirstSolutionSlides;
+                    this.InterestFactor = this.FirstSolutionInterestFactor;
+                }
+                else
+                {
+                    this.Slides = this.SecondSolutionSlides;
+                    this.InterestFactor = this.SecondSolutionInterestFactor;
+                }
             }
         }
 
@@ -283,6 +332,8 @@ namespace PhotoSlideshow.Models
                 randomNumbers.Add(i);
             }
 
+            SetBestSolution();
+
             for (int i = 0; i < numberOfIterations; i++)
             {
                 List<Slide> firstTempSolution = DeepCopyFirstSlides();
@@ -291,15 +342,15 @@ namespace PhotoSlideshow.Models
                 Mutate(firstTempSolution, randomNumbers);
                 Mutate(secondTempSolution, randomNumbers);
 
-                CheckSolutionsForImprovements(firstTempSolution, secondTempSolution);
+                CheckHCForImprovements(firstTempSolution, secondTempSolution);
             }
 
             SetBestSolution();
         }
 
+        //lundy & mees
         public void SimulatedAnnealing(double temperature, double alpha, double epsilon)
         {
-            double maxTemperature = temperature;
             int slideNumber = this.FirstSolutionSlides.Count();
             List<int> randomNumbers = new List<int>();
 
@@ -308,25 +359,27 @@ namespace PhotoSlideshow.Models
                 randomNumbers.Add(i);
             }
 
-            Console.WriteLine($"Initial Values\ntemperature: { temperature }, alpha: { alpha }, epsilon: {epsilon}.");
+            SetBestSolution();
 
             while (temperature > epsilon)
             {
-                temperature *= alpha;
                 List<Slide> firstTempSolution = DeepCopyFirstSlides();
                 List<Slide> secondTempSolution = DeepCopySecondSlides();
 
-                int normalizedValue = (int)Math.Ceiling(((temperature / 4) / maxTemperature) * slideNumber);
-                Console.WriteLine($"Nomalized Value { normalizedValue }\t\tCurrent temperature: { temperature }");
+                Console.WriteLine($"Current temperature: { temperature }");
 
-                for (int i = 0; i < normalizedValue; i++)
-                {
-                    Mutate(firstTempSolution, randomNumbers);
-                    Mutate(secondTempSolution, randomNumbers);
-                }
-                CheckSolutionsForImprovements(firstTempSolution, secondTempSolution);
+                (int, int) firstSlideMutation = Mutate(firstTempSolution, randomNumbers);
+                int firstInterestFactor = this.FirstSolutionInterestFactor - firstSlideMutation.Item1 + firstSlideMutation.Item2;
+
+                (int, int) secondSlideMutation = Mutate(secondTempSolution, randomNumbers);
+                int secondInterestFactor = this.SecondSolutionInterestFactor - secondSlideMutation.Item1 + secondSlideMutation.Item2;
+
+                CheckSAForImprovements(firstTempSolution, secondTempSolution, firstInterestFactor, secondInterestFactor, temperature);
+
+                temperature *= alpha;
+
+                SetBestSolution();
             }
-            SetBestSolution();
         }
         #endregion
 
@@ -341,6 +394,60 @@ namespace PhotoSlideshow.Models
                 int slideBnotA = CalculateDifferenteSlideTags(slides[i + 1], slides[i]);
                 interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
             }
+            return interestFactor;
+        }
+
+        public int MutationInterestFactor(List<Slide> slides, int firstIndex, int secondIndex, bool IsSkipOrTake)
+        {
+            int interestFactor = 0;
+            int commonTags;
+            int slideAnotB;
+            int slideBnotA;
+
+            if (IsSkipOrTake)
+            {
+                for (int i = firstIndex; i < secondIndex; i++)
+                {
+                    commonTags = CalculateCommonSlideTags(slides[i], slides[i + 1]);
+                    slideAnotB = CalculateDifferenteSlideTags(slides[i], slides[i + 1]);
+                    slideBnotA = CalculateDifferenteSlideTags(slides[i + 1], slides[i]);
+                    interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
+                }
+            }
+            else
+            {
+                if (firstIndex < Slides.Count() - 1)
+                {
+                    commonTags = CalculateCommonSlideTags(slides[firstIndex], slides[firstIndex + 1]);
+                    slideAnotB = CalculateDifferenteSlideTags(slides[firstIndex], slides[firstIndex + 1]);
+                    slideBnotA = CalculateDifferenteSlideTags(slides[firstIndex], slides[firstIndex + 1]);
+                    interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
+                }
+
+                if (secondIndex > 0)
+                {
+                    commonTags = CalculateCommonSlideTags(slides[secondIndex - 1], slides[secondIndex]);
+                    slideAnotB = CalculateDifferenteSlideTags(slides[secondIndex - 1], slides[secondIndex]);
+                    slideBnotA = CalculateDifferenteSlideTags(slides[secondIndex - 1], slides[secondIndex]);
+                    interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
+                }
+            }
+
+            if (firstIndex > 0)
+            {
+                commonTags = CalculateCommonSlideTags(slides[firstIndex - 1], slides[firstIndex]);
+                slideAnotB = CalculateDifferenteSlideTags(slides[firstIndex - 1], slides[firstIndex]);
+                slideBnotA = CalculateDifferenteSlideTags(slides[firstIndex - 1], slides[firstIndex]);
+                interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
+            }
+            if (secondIndex < slides.Count() - 1)
+            {
+                commonTags = CalculateCommonSlideTags(slides[secondIndex], slides[secondIndex + 1]);
+                slideAnotB = CalculateDifferenteSlideTags(slides[secondIndex], slides[secondIndex + 1]);
+                slideBnotA = CalculateDifferenteSlideTags(slides[secondIndex], slides[secondIndex + 1]);
+                interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
+            }
+
             return interestFactor;
         }
 

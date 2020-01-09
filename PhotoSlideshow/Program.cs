@@ -15,9 +15,9 @@ namespace PhotoSlideshow
             int fileToRead = 2;
             int numberOfIterations = 500;
 
-            double temperature = 200;
-            double alpha = 0.996;
-            double epsilon = 0.00001;
+            double temperature = 400;
+            double alpha = 0.999;
+            double epsilon = 0.0001;
 
             Random random = new Random();
             Solution solution = new Solution();
@@ -46,6 +46,7 @@ namespace PhotoSlideshow
 
             Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");
             Console.WriteLine($"Interest Factor: { solution.InterestFactor }\n");
+            Console.WriteLine($"Interest Factor: { solution.CalculateInterestFactor(solution.Slides) }\n");
 
             Console.ReadKey();
             #endregion

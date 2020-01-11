@@ -103,27 +103,25 @@ namespace PhotoSlideshow.Models
             }
         }
 
-        public void GenerateSolutionWithHeuristic(List<Photo> photos, int takePhotosNumber = 1000, int? firstOrSecond = null)
+        public void GenerateSolutionWithHeuristic(List<Photo> photos, Stopwatch stopwatch, int timeToRun, int takePhotosNumber = 1000, int? firstOrSecond = null)
         {
             int slideId = 0;
             int photosCount = photos.Count();
 
             int normalizedValue = (int)Math.Ceiling((decimal)photosCount / takePhotosNumber);
 
-            for (int i = 0; i < normalizedValue; i++)
+            for (int i = 0; i < normalizedValue && stopwatch.Elapsed.TotalMinutes < timeToRun; i++)
             {
                 List<Photo> tempPhotos = new List<Photo>(photos.Skip(i * takePhotosNumber).Take(takePhotosNumber));
                 int tempPhotosCount = tempPhotos.Count();
                 int iterationCount = 0;
 
-                while (iterationCount < tempPhotosCount)
+                while (iterationCount < tempPhotosCount && stopwatch.Elapsed.TotalMinutes < timeToRun)
                 {
                     Photo photo;
                     if (iterationCount != 0 && i != 0)
                     {
                         photo = tempPhotos.OrderByDescending(x =>
-                                            x.Tags.Where(t => !this.Slides.LastOrDefault().Tags.Contains(t)).Count() +
-                                            x.Tags.Where(t => this.Slides.LastOrDefault().Tags.Contains(t)).Count() +
                                             this.Slides.LastOrDefault().Tags.Where(t => x.Tags.Contains(t)).Count())
                                         .FirstOrDefault();
                     }
@@ -325,7 +323,7 @@ namespace PhotoSlideshow.Models
         #endregion
 
         #region Algorithms
-        public void HillClimbing(int numberOfIterations)
+        public void HillClimbing(int numberOfIterations, Stopwatch stopwatch, int timeToRun)
         {
             List<int> randomNumbers = new List<int>();
             for (int i = 0; i < this.Slides.Count(); i++)
@@ -335,7 +333,7 @@ namespace PhotoSlideshow.Models
 
             SetBestSolution();
 
-            for (int i = 0; i < numberOfIterations; i++)
+            for (int i = 0; i < numberOfIterations && stopwatch.Elapsed.TotalMinutes < timeToRun; i++)
             {
                 List<Slide> firstTempSolution = DeepCopyFirstSlides();
                 List<Slide> secondTempSolution = DeepCopySecondSlides();
@@ -349,12 +347,9 @@ namespace PhotoSlideshow.Models
             SetBestSolution();
         }
 
-        //lundy & mees
-        public void SimulatedAnnealing(double temperature, double alpha, double epsilon, int timeToRun)
+        public void SimulatedAnnealing(double temperature, double alpha, double epsilon, Stopwatch stopwatch, int timeToRun)
         {
-            Stopwatch stopwatch = new Stopwatch();
             List<int> randomNumbers = new List<int>();
-
             int slideNumber = this.FirstSolutionSlides.Count();
 
             for (int i = 0; i < slideNumber; i++)
@@ -363,8 +358,6 @@ namespace PhotoSlideshow.Models
             }
 
             SetBestSolution();
-
-            stopwatch.Start();
 
             while (temperature > epsilon && stopwatch.Elapsed.TotalMinutes < timeToRun)
             {
@@ -385,8 +378,6 @@ namespace PhotoSlideshow.Models
 
                 SetBestSolution();
             }
-
-            stopwatch.Stop();
         }
         #endregion
 

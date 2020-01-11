@@ -12,25 +12,21 @@ namespace PhotoSlideshow.Extensions
         public static Instance ReadInput(string filePath)
         {
             string[] lines = File.ReadAllLines(filePath);
-            Instance instance = null;
+            Instance instance = new Instance();
 
-            if (lines.Length > 0)
+            for (int i = 0; i < lines.Length; i++)
             {
-                instance = new Instance();
-                for (int i = 0; i < lines.Length; i++)
+                if (i == 0)
                 {
-                    if (i == 0)
-                    {
-                        instance.NumberOfPhotos = int.Parse(lines[i]);
-                    }
-                    else
-                    {
-                        string[] temp_params = lines[i].Split(' ');
-                        Photo temp_photo = new Photo(i - 1, (Orientation)Enum.Parse(typeof(Orientation), temp_params[0])
-                            , new List<string>(temp_params.Skip(2)));
+                    instance.NumberOfPhotos = int.Parse(lines[i]);
+                }
+                else
+                {
+                    string[] temp_params = lines[i].Split(' ');
+                    Photo temp_photo = new Photo(i-1, (Orientation)Enum.Parse(typeof(Orientation), temp_params[0])
+                        , new List<string>(temp_params.Skip(2)));
 
-                        instance.Photos.Add(temp_photo);
-                    }
+                    instance.Photos.Add(temp_photo);
                 }
             }
 

@@ -105,8 +105,6 @@ namespace PhotoSlideshow.Models
 
         public void GenerateSolutionWithHeuristic(List<Photo> photos, int takePhotosNumber = 1000, int? firstOrSecond = null)
         {
-            Random random = new Random();
-
             int slideId = 0;
             int photosCount = photos.Count();
 

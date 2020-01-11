@@ -13,7 +13,7 @@ namespace PhotoSlideshow
         {
             #region Initializing values
             int fileToRead          = 2;
-            int numberOfIterations  = 500;
+            //int numberOfIterations  = 500;
 
             int     timeToRun   = 5;
             double  temperature = 400;
@@ -24,8 +24,6 @@ namespace PhotoSlideshow
             Solution solution = new Solution();
 
             string[] files = Directory.GetFiles($"Samples", "*.txt");
-
-            List<Slide> slides = new List<Slide>();
             Instance instance = Extensions.IO.ReadInput(files[fileToRead]);
 
             Console.WriteLine($"Number of photos: {instance.NumberOfPhotos}\n");
@@ -47,7 +45,6 @@ namespace PhotoSlideshow
 
             Console.WriteLine($"Number of slides: { solution.Slides.Count() }\n");
             Console.WriteLine($"Interest Factor: { solution.InterestFactor }\n");
-            Console.WriteLine($"Interest Factor: { solution.CalculateInterestFactor(solution.Slides) }\n");
 
             Console.ReadKey();
             #endregion

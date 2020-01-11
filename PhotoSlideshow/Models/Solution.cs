@@ -183,9 +183,10 @@ namespace PhotoSlideshow.Models
         #endregion
 
         #region Functions
-        public (int, int) Mutate(List<Slide> slides, List<int> randomNumbers)
+        public Tuple<int, int> Mutate(List<Slide> slides, List<int> randomNumbers)
         {
-            (int, int) response = (0, 0);
+            int item1 = 0;
+            int item2 = 0;
             Random random = new Random();
 
             int mutationSelector = random.Next(0, 10);
@@ -199,7 +200,7 @@ namespace PhotoSlideshow.Models
                 int firstSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.FirstOrDefault()));
                 int secondSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.LastOrDefault()));
 
-                response.Item1 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, 1);
+                item1 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, 1);
 
                 List<Photo> firstSlidePhotos = new List<Photo>
                 {
@@ -222,31 +223,31 @@ namespace PhotoSlideshow.Models
                 slides[firstSlideIndex] = slideA;
                 slides[secondSlideIndex] = slideB;
 
-                response.Item2 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, 1);
+                item2 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, 1);
             }
             else if (mutationSelector < 7)
             {
                 slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
 
-                response.Item1 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), 1);
+                item1 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), 1);
 
                 Slide tempSlide = slides[slidesToSwap.FirstOrDefault()];
                 slides[slidesToSwap.FirstOrDefault()] = slides[slidesToSwap.LastOrDefault()];
                 slides[slidesToSwap.LastOrDefault()] = tempSlide;
 
-                response.Item2 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), 1);
+                item2 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), 1);
             }
             else if (mutationSelector < 9)
             {
                 slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
 
-                response.Item1 = MutationInterestFactor(slides, slidesToSwap.OrderBy(x => x).FirstOrDefault(), slidesToSwap.OrderBy(x => x).LastOrDefault(), 2);
+                item1 = MutationInterestFactor(slides, slidesToSwap.OrderBy(x => x).FirstOrDefault(), slidesToSwap.OrderBy(x => x).LastOrDefault(), 2);
 
                 Slide slide = slides[slidesToSwap.FirstOrDefault()];
                 slides.RemoveAt(slidesToSwap.FirstOrDefault());
                 slides.Insert(slidesToSwap.LastOrDefault(), slide);
 
-                response.Item2 = MutationInterestFactor(slides, slidesToSwap.OrderBy(x => x).FirstOrDefault(), slidesToSwap.OrderBy(x => x).LastOrDefault(), 2);
+                item2 = MutationInterestFactor(slides, slidesToSwap.OrderBy(x => x).FirstOrDefault(), slidesToSwap.OrderBy(x => x).LastOrDefault(), 2);
             }
             else
             {
@@ -254,13 +255,13 @@ namespace PhotoSlideshow.Models
                 int skip = random.Next(0, slidesCount);
                 int take = random.Next(0, slidesCount - skip);
 
-                response.Item1 = MutationInterestFactor(slides, skip, skip + take, 2);
+                item1 = MutationInterestFactor(slides, skip, skip + take, 2);
 
                 slides.Skip(skip).Take(take).OrderBy(x => random.Next()).ToList();
 
-                response.Item2 = MutationInterestFactor(slides, skip, skip + take, 2);
+                item2 = MutationInterestFactor(slides, skip, skip + take, 2);
             }
-            return response;
+            return new Tuple<int, int>(item1, item2);
         }
 
         public void CheckHCForImprovements(List<Slide> firstSolution, List<Slide> secondSolution)
@@ -374,10 +375,10 @@ namespace PhotoSlideshow.Models
 
                 Console.WriteLine($"Current temperature: { temperature }");
 
-                (int, int) firstSlideMutation = Mutate(firstTempSolution, randomNumbers);
+                Tuple<int, int> firstSlideMutation = Mutate(firstTempSolution, randomNumbers);
                 int firstInterestFactor = this.FirstSolutionInterestFactor - firstSlideMutation.Item1 + firstSlideMutation.Item2;
 
-                (int, int) secondSlideMutation = Mutate(secondTempSolution, randomNumbers);
+                Tuple<int, int> secondSlideMutation = Mutate(secondTempSolution, randomNumbers);
                 int secondInterestFactor = this.SecondSolutionInterestFactor - secondSlideMutation.Item1 + secondSlideMutation.Item2;
 
                 CheckSAForImprovements(firstTempSolution, secondTempSolution, firstInterestFactor, secondInterestFactor, temperature);

@@ -1,6 +1,7 @@
 ﻿using PhotoSlideshow.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -186,6 +187,7 @@ namespace PhotoSlideshow.Models
         {
             (int, int) response = (0, 0);
             Random random = new Random();
+
             int mutationSelector = random.Next(0, 10);
             List<int> slidesToSwap = slides.Where(x => x.Photos.Count == 2).OrderBy(x => random.Next()).Select(x => x.Id).Take(2).ToList();
 
@@ -197,7 +199,7 @@ namespace PhotoSlideshow.Models
                 int firstSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.FirstOrDefault()));
                 int secondSlideIndex = slides.IndexOf(slides.FirstOrDefault(x => x.Id == slidesToSwap.LastOrDefault()));
 
-                response.Item1 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, false);
+                response.Item1 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, 1);
 
                 List<Photo> firstSlidePhotos = new List<Photo>
                 {
@@ -220,43 +222,43 @@ namespace PhotoSlideshow.Models
                 slides[firstSlideIndex] = slideA;
                 slides[secondSlideIndex] = slideB;
 
-                response.Item2 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, false);
+                response.Item2 = MutationInterestFactor(slides, firstSlideIndex, secondSlideIndex, 1);
             }
             else if (mutationSelector < 7)
             {
                 slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
 
-                response.Item1 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
+                response.Item1 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), 1);
 
                 Slide tempSlide = slides[slidesToSwap.FirstOrDefault()];
                 slides[slidesToSwap.FirstOrDefault()] = slides[slidesToSwap.LastOrDefault()];
                 slides[slidesToSwap.LastOrDefault()] = tempSlide;
 
-                response.Item2 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
+                response.Item2 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), 1);
             }
-            //else if (mutationSelector < 9)
-            //{
-            //    slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
+            else if (mutationSelector < 9)
+            {
+                slidesToSwap = randomNumbers.OrderBy(x => random.Next()).Take(2).ToList();
 
-            //    response.Item1 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
+                response.Item1 = MutationInterestFactor(slides, slidesToSwap.OrderBy(x => x).FirstOrDefault(), slidesToSwap.OrderBy(x => x).LastOrDefault(), 2);
 
-            //    Slide slide = slides[slidesToSwap.FirstOrDefault()];
-            //    slides.RemoveAt(slidesToSwap.FirstOrDefault());
-            //    slides.Insert(slidesToSwap.LastOrDefault(), slide);
+                Slide slide = slides[slidesToSwap.FirstOrDefault()];
+                slides.RemoveAt(slidesToSwap.FirstOrDefault());
+                slides.Insert(slidesToSwap.LastOrDefault(), slide);
 
-            //    response.Item2 = MutationInterestFactor(slides, slidesToSwap.FirstOrDefault(), slidesToSwap.LastOrDefault(), false);
-            //}
+                response.Item2 = MutationInterestFactor(slides, slidesToSwap.OrderBy(x => x).FirstOrDefault(), slidesToSwap.OrderBy(x => x).LastOrDefault(), 2);
+            }
             else
             {
                 int slidesCount = slides.Count();
                 int skip = random.Next(0, slidesCount);
                 int take = random.Next(0, slidesCount - skip);
 
-                response.Item1 = MutationInterestFactor(slides, skip, skip + take, true);
+                response.Item1 = MutationInterestFactor(slides, skip, skip + take, 2);
 
                 slides.Skip(skip).Take(take).OrderBy(x => random.Next()).ToList();
 
-                response.Item2 = MutationInterestFactor(slides, skip, skip + take, true);
+                response.Item2 = MutationInterestFactor(slides, skip, skip + take, 2);
             }
             return response;
         }
@@ -349,10 +351,12 @@ namespace PhotoSlideshow.Models
         }
 
         //lundy & mees
-        public void SimulatedAnnealing(double temperature, double alpha, double epsilon)
+        public void SimulatedAnnealing(double temperature, double alpha, double epsilon, int timeToRun)
         {
-            int slideNumber = this.FirstSolutionSlides.Count();
+            Stopwatch stopwatch = new Stopwatch();
             List<int> randomNumbers = new List<int>();
+
+            int slideNumber = this.FirstSolutionSlides.Count();
 
             for (int i = 0; i < slideNumber; i++)
             {
@@ -361,7 +365,9 @@ namespace PhotoSlideshow.Models
 
             SetBestSolution();
 
-            while (temperature > epsilon)
+            stopwatch.Start();
+
+            while (temperature > epsilon && stopwatch.Elapsed.TotalMinutes < timeToRun)
             {
                 List<Slide> firstTempSolution = DeepCopyFirstSlides();
                 List<Slide> secondTempSolution = DeepCopySecondSlides();
@@ -380,6 +386,8 @@ namespace PhotoSlideshow.Models
 
                 SetBestSolution();
             }
+
+            stopwatch.Stop();
         }
         #endregion
 
@@ -397,57 +405,68 @@ namespace PhotoSlideshow.Models
             return interestFactor;
         }
 
-        public int MutationInterestFactor(List<Slide> slides, int firstIndex, int secondIndex, bool IsSkipOrTake)
+        public int MutationInterestFactor(List<Slide> slides, int firstIndex, int secondIndex, int mode)
         {
             int interestFactor = 0;
-            int commonTags;
-            int slideAnotB;
-            int slideBnotA;
+            int slidesCount = Slides.Count() - 1;
 
-            if (IsSkipOrTake)
+            int difference = Math.Abs(firstIndex - secondIndex);
+
+            if (mode == 1 && difference != 1)
             {
-                for (int i = firstIndex; i < secondIndex; i++)
+                interestFactor += CalculateInterestFactorForOneSlide(slides, firstIndex);
+                interestFactor += CalculateInterestFactorForOneSlide(slides, secondIndex);
+            }
+            else
+            {
+                int start = firstIndex > secondIndex ? (secondIndex > 0 ? secondIndex - 1 : secondIndex) : (firstIndex > 0 ? firstIndex - 1 : firstIndex);
+                int end = secondIndex < firstIndex ? (secondIndex > 0 ? firstIndex + 1 : secondIndex) : (secondIndex < slidesCount ? secondIndex + 1 : secondIndex);
+                interestFactor = CalculateSlidesBetweenTwoPoints(slides, start, end);
+            }
+
+            return interestFactor;
+        }
+
+        public int CalculateSlidesBetweenTwoPoints(List<Slide> slides, int start, int end)
+        {
+            int interestFactor = 0;
+
+            for (int i = start; i < end; i++)
+            {
+                int commonTags = CalculateCommonSlideTags(slides[i], slides[i + 1]);
+                int slideAnotB = CalculateDifferenteSlideTags(slides[i], slides[i + 1]);
+                int slideBnotA = CalculateDifferenteSlideTags(slides[i + 1], slides[i]);
+                interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
+            }
+
+            return interestFactor;
+        }
+
+        public int CalculateInterestFactorForOneSlide(List<Slide> slides, int index)
+        {
+            int interestFactor = 0;
+            if (index < slides.Count() - 1)
+            {
+                int commonTags = CalculateCommonSlideTags(slides[index], slides[index + 1]);
+                int slideAnotB = CalculateDifferenteSlideTags(slides[index], slides[index + 1]);
+                int slideBnotA = CalculateDifferenteSlideTags(slides[index + 1], slides[index]);
+                interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
+
+                if (index > 0)
                 {
-                    commonTags = CalculateCommonSlideTags(slides[i], slides[i + 1]);
-                    slideAnotB = CalculateDifferenteSlideTags(slides[i], slides[i + 1]);
-                    slideBnotA = CalculateDifferenteSlideTags(slides[i + 1], slides[i]);
+                    commonTags = CalculateCommonSlideTags(slides[index - 1], slides[index]);
+                    slideAnotB = CalculateDifferenteSlideTags(slides[index - 1], slides[index]);
+                    slideBnotA = CalculateDifferenteSlideTags(slides[index], slides[index - 1]);
                     interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
                 }
             }
             else
             {
-                if (firstIndex < Slides.Count() - 1)
-                {
-                    commonTags = CalculateCommonSlideTags(slides[firstIndex], slides[firstIndex + 1]);
-                    slideAnotB = CalculateDifferenteSlideTags(slides[firstIndex], slides[firstIndex + 1]);
-                    slideBnotA = CalculateDifferenteSlideTags(slides[firstIndex], slides[firstIndex + 1]);
-                    interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
-                }
-
-                if (secondIndex > 0)
-                {
-                    commonTags = CalculateCommonSlideTags(slides[secondIndex - 1], slides[secondIndex]);
-                    slideAnotB = CalculateDifferenteSlideTags(slides[secondIndex - 1], slides[secondIndex]);
-                    slideBnotA = CalculateDifferenteSlideTags(slides[secondIndex - 1], slides[secondIndex]);
-                    interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
-                }
-            }
-
-            if (firstIndex > 0)
-            {
-                commonTags = CalculateCommonSlideTags(slides[firstIndex - 1], slides[firstIndex]);
-                slideAnotB = CalculateDifferenteSlideTags(slides[firstIndex - 1], slides[firstIndex]);
-                slideBnotA = CalculateDifferenteSlideTags(slides[firstIndex - 1], slides[firstIndex]);
+                int commonTags = CalculateCommonSlideTags(slides[index - 1], slides[index]);
+                int slideAnotB = CalculateDifferenteSlideTags(slides[index - 1], slides[index]);
+                int slideBnotA = CalculateDifferenteSlideTags(slides[index], slides[index - 1]);
                 interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
             }
-            if (secondIndex < slides.Count() - 1)
-            {
-                commonTags = CalculateCommonSlideTags(slides[secondIndex], slides[secondIndex + 1]);
-                slideAnotB = CalculateDifferenteSlideTags(slides[secondIndex], slides[secondIndex + 1]);
-                slideBnotA = CalculateDifferenteSlideTags(slides[secondIndex], slides[secondIndex + 1]);
-                interestFactor += Math.Min(commonTags, Math.Min(slideAnotB, slideBnotA));
-            }
-
             return interestFactor;
         }
 

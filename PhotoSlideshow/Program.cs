@@ -12,12 +12,13 @@ namespace PhotoSlideshow
         static void Main(string[] args)
         {
             #region Initializing values
-            int fileToRead = 2;
-            int numberOfIterations = 500;
+            int fileToRead          = 2;
+            int numberOfIterations  = 500;
 
-            double temperature = 400;
-            double alpha = 0.999;
-            double epsilon = 0.0001;
+            int     timeToRun   = 5;
+            double  temperature = 400;
+            double  alpha       = 0.999;
+            double  epsilon     = 0.0001;
 
             Random random = new Random();
             Solution solution = new Solution();
@@ -38,7 +39,7 @@ namespace PhotoSlideshow
             solution.SecondSolutionInterestFactor = solution.CalculateInterestFactor(solution.SecondSolutionSlides);
 
             //solution.HillClimbing(numberOfIterations);
-            solution.SimulatedAnnealing(temperature, alpha, epsilon);
+            solution.SimulatedAnnealing(temperature, alpha, epsilon, timeToRun);
             #endregion
 
             #region Outputs
